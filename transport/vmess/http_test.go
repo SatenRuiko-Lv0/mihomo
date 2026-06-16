@@ -28,6 +28,12 @@ func TestWriteHTTPClientRequestLegacyDefault(t *testing.T) {
 	if strings.Contains(actual, "Content-Length:") {
 		t.Fatal("request should not include Content-Length")
 	}
+	if strings.Contains(actual, "User-Agent:") {
+		t.Fatal("request should not include default User-Agent")
+	}
+	if strings.Contains(actual, "Connection:") {
+		t.Fatal("request should not include default Connection")
+	}
 }
 
 func TestWriteHTTPClientRequestPreservesConfiguredHeaders(t *testing.T) {
