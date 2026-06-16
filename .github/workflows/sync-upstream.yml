@@ -12,7 +12,7 @@ on:
           - release
           - alpha
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/10 * * * *"
 
 permissions:
   contents: write
@@ -40,7 +40,7 @@ jobs:
       - name: Add upstream
         run: |
           git remote add upstream https://github.com/MetaCubeX/mihomo.git || git remote set-url upstream https://github.com/MetaCubeX/mihomo.git
-          git fetch upstream Meta --tags --prune
+          git fetch upstream +refs/heads/Meta:refs/remotes/upstream/Meta --prune
 
       - name: Sync latest release
         id: sync
@@ -56,23 +56,28 @@ jobs:
             echo "No upstream latest release found" >&2
             exit 1
           fi
-          git merge-base --is-ancestor "${latest}" upstream/Meta || {
+          git fetch upstream "+refs/tags/${latest}:refs/tags/upstream/${latest}"
+          upstream_tag="refs/tags/upstream/${latest}"
+          git merge-base --is-ancestor "${upstream_tag}" upstream/Meta || {
             echo "Upstream latest release ${latest} is not on the official Meta branch" >&2
             exit 1
           }
 
-          if git ls-remote --exit-code --tags origin "refs/tags/${latest}" >/dev/null 2>&1; then
-            echo "Latest release ${latest} already exists in fork"
+          current_meta="$(git ls-remote origin refs/heads/Meta | awk '{print $1}')"
+          git switch -C "release/${latest}" "${upstream_tag}"
+          git am "$patch_dir"/*.patch || {
+            echo "Compatibility patch replay failed on ${latest}" >&2
+            exit 1
+          }
+          patched_release="$(git rev-parse HEAD)"
+          if git ls-remote --exit-code --tags origin "refs/tags/${latest}" >/dev/null 2>&1 && [[ "$patched_release" == "$current_meta" ]]; then
+            echo "Latest release ${latest} already exists in fork and Meta is current"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "version=${latest}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git switch -C "release/${latest}" "${latest}"
-          git am "$patch_dir"/*.patch || {
-            echo "Compatibility patch replay failed on ${latest}" >&2
-            exit 1
-          }
+          git push origin "HEAD:Meta" --force
           git push origin "HEAD:release/${latest}" --force
           git tag -f "${latest}"
           git push origin "refs/tags/${latest}" --force
@@ -113,7 +118,7 @@ jobs:
       - name: Add upstream
         run: |
           git remote add upstream https://github.com/MetaCubeX/mihomo.git || git remote set-url upstream https://github.com/MetaCubeX/mihomo.git
-          git fetch upstream Alpha --tags --prune
+          git fetch upstream +refs/heads/Alpha:refs/remotes/upstream/Alpha --prune
 
       - name: Sync Alpha
         id: sync

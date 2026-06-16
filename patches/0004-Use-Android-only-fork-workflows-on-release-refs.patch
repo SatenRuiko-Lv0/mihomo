@@ -5,10 +5,10 @@ Subject: [PATCH] Use Android-only fork workflows on release refs
 
 
 diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
-index 66986089..4da3d109 100644
+index 66986089..bed1f87e 100644
 --- a/.github/workflows/build.yml
 +++ b/.github/workflows/build.yml
-@@ -1,539 +1,160 @@
+@@ -1,539 +1,155 @@
  name: Build
 +
  on:
@@ -30,15 +30,15 @@ index 66986089..4da3d109 100644
 +      build_ref:
 +        description: "Git ref to check out for the build. Empty means the triggering ref."
 +        required: false
-   push:
+-  push:
 -    paths-ignore:
 -      - "docs/**"
 -      - "README.md"
 -      - ".github/ISSUE_TEMPLATE/**"
-     branches:
-       - Alpha
-     tags:
-       - "v*"
+-    branches:
+-      - Alpha
+-    tags:
+-      - "v*"
    pull_request:
 -    branches:
 -      - Alpha

@@ -17,11 +17,6 @@ on:
       build_ref:
         description: "Git ref to check out for the build. Empty means the triggering ref."
         required: false
-  push:
-    branches:
-      - Alpha
-    tags:
-      - "v*"
   pull_request:
 
 concurrency:
