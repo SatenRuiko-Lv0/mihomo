@@ -114,14 +114,14 @@ index 00000000..4f05fd92
 +	conn := &captureConn{}
 +	payload := []byte("vmess-payload")
 +
-+	err := writeHTTPClientRequest(conn, "PUT", "/", "tms.dingtalk.com", nil, payload)
++	err := writeHTTPClientRequest(conn, "PUT", "/", "example.com", nil, payload)
 +	if err != nil {
 +		t.Fatal(err)
 +	}
 +
 +	expected := strings.Join([]string{
 +		"PUT / HTTP/1.1",
-+		"Host: tms.dingtalk.com",
++		"Host: example.com",
 +		"",
 +		"vmess-payload",
 +	}, "\r\n")

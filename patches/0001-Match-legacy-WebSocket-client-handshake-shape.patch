@@ -128,10 +128,10 @@ index 00000000..0a067973
 +		Method: http.MethodGet,
 +		URL: &url.URL{
 +			Scheme: "ws",
-+			Host:   "47.103.152.126:80",
++			Host:   "192.0.2.1:80",
 +			Path:   "/",
 +		},
-+		Host:   "tms.dingtalk.com",
++		Host:   "example.com",
 +		Header: make(http.Header),
 +	}
 +	request.Header.Set("Connection", "Upgrade")
@@ -146,7 +146,7 @@ index 00000000..0a067973
 +
 +	expected := strings.Join([]string{
 +		"GET / HTTP/1.1",
-+		"Host: tms.dingtalk.com",
++		"Host: example.com",
 +		"Upgrade: websocket",
 +		"Connection: Upgrade",
 +		"Sec-WebSocket-Version: 13",
