@@ -65,13 +65,21 @@ jobs:
 
           current_meta="$(git ls-remote origin refs/heads/Meta | awk '{print $1}')"
           current_release_tag="$(git ls-remote origin "refs/tags/${latest}" | awk '{print $1}')"
+          current_meta_tree=""
+          current_release_tag_tree=""
+          if [[ -n "$current_meta" ]]; then
+            current_meta_tree="$(git ls-tree "$current_meta" | git mktree)"
+          fi
+          if [[ -n "$current_release_tag" ]]; then
+            current_release_tag_tree="$(git ls-tree "$current_release_tag" | git mktree)"
+          fi
           git switch -C "release/${latest}" "${upstream_tag}"
           git am "$patch_dir"/*.patch || {
             echo "Compatibility patch replay failed on ${latest}" >&2
             exit 1
           }
-          patched_release="$(git rev-parse HEAD)"
-          if [[ "$patched_release" == "$current_meta" && "$patched_release" == "$current_release_tag" ]]; then
+          patched_release_tree="$(git rev-parse HEAD^{tree})"
+          if [[ "$patched_release_tree" == "$current_meta_tree" && "$patched_release_tree" == "$current_release_tag_tree" ]]; then
             echo "Latest release ${latest} already exists in fork and Meta/tag are current"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "version=${latest}" >> "$GITHUB_OUTPUT"
@@ -131,6 +139,14 @@ jobs:
           upstream_alpha="$(git rev-parse upstream/Alpha)"
           current_alpha="$(git ls-remote origin refs/heads/Alpha | awk '{print $1}')"
           current_alpha_tag="$(git ls-remote origin refs/tags/Prerelease-Alpha | awk '{print $1}')"
+          current_alpha_tree=""
+          current_alpha_tag_tree=""
+          if [[ -n "$current_alpha" ]]; then
+            current_alpha_tree="$(git ls-tree "$current_alpha" | git mktree)"
+          fi
+          if [[ -n "$current_alpha_tag" ]]; then
+            current_alpha_tag_tree="$(git ls-tree "$current_alpha_tag" | git mktree)"
+          fi
 
           git switch -C Alpha upstream/Alpha
           git am "$patch_dir"/*.patch || {
@@ -138,8 +154,8 @@ jobs:
             exit 1
           }
 
-          patched_alpha="$(git rev-parse HEAD)"
-          if [[ "$patched_alpha" == "$current_alpha" && "$patched_alpha" == "$current_alpha_tag" ]]; then
+          patched_alpha_tree="$(git rev-parse HEAD^{tree})"
+          if [[ "$patched_alpha_tree" == "$current_alpha_tree" && "$patched_alpha_tree" == "$current_alpha_tag_tree" ]]; then
             echo "Fork Alpha branch/tag are already current"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
