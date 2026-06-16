@@ -20,7 +20,7 @@ on:
   pull_request:
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}"
+  group: "${{ github.workflow }}-${{ github.event.inputs.channel || github.ref }}-${{ github.event.inputs.build_ref || github.ref }}"
   cancel-in-progress: true
 
 permissions:

@@ -44,7 +44,7 @@ index 66986089..bed1f87e 100644
 -      - Alpha
 +
  concurrency:
-   group: "${{ github.workflow }}-${{ github.ref }}"
+   group: "${{ github.workflow }}-${{ github.event.inputs.channel || github.ref }}-${{ github.event.inputs.build_ref || github.ref }}"
    cancel-in-progress: true
 -  
 -env:
