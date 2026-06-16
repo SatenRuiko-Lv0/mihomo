@@ -64,14 +64,15 @@ jobs:
           }
 
           current_meta="$(git ls-remote origin refs/heads/Meta | awk '{print $1}')"
+          current_release_tag="$(git ls-remote origin "refs/tags/${latest}" | awk '{print $1}')"
           git switch -C "release/${latest}" "${upstream_tag}"
           git am "$patch_dir"/*.patch || {
             echo "Compatibility patch replay failed on ${latest}" >&2
             exit 1
           }
           patched_release="$(git rev-parse HEAD)"
-          if git ls-remote --exit-code --tags origin "refs/tags/${latest}" >/dev/null 2>&1 && [[ "$patched_release" == "$current_meta" ]]; then
-            echo "Latest release ${latest} already exists in fork and Meta is current"
+          if [[ "$patched_release" == "$current_meta" && "$patched_release" == "$current_release_tag" ]]; then
+            echo "Latest release ${latest} already exists in fork and Meta/tag are current"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "version=${latest}" >> "$GITHUB_OUTPUT"
             exit 0
@@ -129,6 +130,7 @@ jobs:
 
           upstream_alpha="$(git rev-parse upstream/Alpha)"
           current_alpha="$(git ls-remote origin refs/heads/Alpha | awk '{print $1}')"
+          current_alpha_tag="$(git ls-remote origin refs/tags/Prerelease-Alpha | awk '{print $1}')"
 
           git switch -C Alpha upstream/Alpha
           git am "$patch_dir"/*.patch || {
@@ -137,13 +139,15 @@ jobs:
           }
 
           patched_alpha="$(git rev-parse HEAD)"
-          if [[ "$patched_alpha" == "$current_alpha" ]]; then
-            echo "Fork Alpha is already current"
+          if [[ "$patched_alpha" == "$current_alpha" && "$patched_alpha" == "$current_alpha_tag" ]]; then
+            echo "Fork Alpha branch/tag are already current"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git push origin HEAD:Alpha --force
+          git tag -f Prerelease-Alpha
+          git push origin refs/tags/Prerelease-Alpha --force
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Trigger alpha build
