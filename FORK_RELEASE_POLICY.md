@@ -15,6 +15,7 @@ This repository is the SatenRuiko-Lv0 fork of MetaCubeX/mihomo.
 - The official stable code line is `Meta`; use `Meta` and official `v*` release tags for stable release work.
 - Treat `Meta` as the current official stable branch for release sync, patch replay, build, and publishing.
 - Do not use the official `main` branch as a release base. It is not the active stable release branch for this fork workflow and must be treated as stale/archive-only unless upstream policy changes.
+- Treat the official `main` branch as a historical/memorial branch for this fork workflow. Do not use it for latest-version detection, patch replay, build inputs, or release publishing, even if it receives documentation, template, or repository-maintenance commits.
 - Alpha prereleases must be based on the official `Alpha` branch.
 - Local changes are maintained as a small compatibility patch set and reapplied after each upstream sync.
 - Do not publish stable builds from an Alpha snapshot.
