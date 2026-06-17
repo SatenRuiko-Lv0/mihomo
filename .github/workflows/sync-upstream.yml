@@ -12,7 +12,7 @@ on:
           - release
           - alpha
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "0 * * * *"
 
 permissions:
   contents: write
