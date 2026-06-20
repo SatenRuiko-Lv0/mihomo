@@ -1,0 +1,104 @@
+From 7a8de942281b995abb317defe1437eda3d736e85 Mon Sep 17 00:00:00 2001
+From: SatenRuiko-Lv0 <pcscgxy@qq.com>
+Date: Tue, 16 Jun 2026 17:14:43 +0800
+Subject: [PATCH 5/5] Minimize plaintext H1 client headers
+
+---
+ transport/vmess/websocket.go      | 10 +-------
+ transport/vmess/websocket_test.go | 41 ++++++++++++++++++++++++++++---
+ 2 files changed, 39 insertions(+), 12 deletions(-)
+
+diff --git a/transport/vmess/websocket.go b/transport/vmess/websocket.go
+index 5f008d5d..63f79e79 100644
+--- a/transport/vmess/websocket.go
++++ b/transport/vmess/websocket.go
+@@ -545,14 +545,6 @@ func writeWebsocketClientRequest(conn net.Conn, request *http.Request) error {
+ 		buffer.WriteString("\r\n")
+ 	}
+ 
+-	userAgent := request.Header.Get("User-Agent")
+-	if userAgent == "" {
+-		userAgent = "Go-http-client/1.1"
+-	}
+-	buffer.WriteString("User-Agent: ")
+-	buffer.WriteString(userAgent)
+-	buffer.WriteString("\r\n")
+-
+ 	for key, values := range request.Header {
+ 		if isWebsocketFixedClientHeader(key) {
+ 			continue
+@@ -575,7 +567,7 @@ func writeWebsocketClientRequest(conn net.Conn, request *http.Request) error {
+ 
+ func isWebsocketFixedClientHeader(key string) bool {
+ 	switch http.CanonicalHeaderKey(key) {
+-	case "Host", "Connection", "Upgrade", "Sec-Websocket-Key", "Sec-Websocket-Version", "User-Agent":
++	case "Host", "Connection", "Upgrade", "Sec-Websocket-Key", "Sec-Websocket-Version":
+ 		return true
+ 	default:
+ 		return false
+diff --git a/transport/vmess/websocket_test.go b/transport/vmess/websocket_test.go
+index 06023a12..cfc5b2f9 100644
+--- a/transport/vmess/websocket_test.go
++++ b/transport/vmess/websocket_test.go
+@@ -18,7 +18,7 @@ func (c *captureConn) Write(b []byte) (int, error) {
+ 	return c.written.Write(b)
+ }
+ 
+-func TestWriteWebsocketClientRequestLegacyOrder(t *testing.T) {
++func TestWriteWebsocketClientRequestMinimalOrder(t *testing.T) {
+ 	request := &http.Request{
+ 		Method: http.MethodGet,
+ 		URL: &url.URL{
+@@ -46,12 +46,47 @@ func TestWriteWebsocketClientRequestLegacyOrder(t *testing.T) {
+ 		"Connection: Upgrade",
+ 		"Sec-WebSocket-Version: 13",
+ 		"Sec-WebSocket-Key: test-key",
+-		"User-Agent: Go-http-client/1.1",
+ 		"",
+ 		"",
+ 	}, "\r\n")
+ 
+-	if actual := conn.written.String(); actual != expected {
++	actual := conn.written.String()
++	if actual != expected {
+ 		t.Fatalf("unexpected request:\n%s", actual)
+ 	}
++	if strings.Contains(actual, "User-Agent:") {
++		t.Fatalf("request should not include default User-Agent:\n%s", actual)
++	}
++}
++
++func TestWriteWebsocketClientRequestPreservesConfiguredHeaders(t *testing.T) {
++	request := &http.Request{
++		Method: http.MethodGet,
++		URL: &url.URL{
++			Scheme: "ws",
++			Host:   "192.0.2.1:80",
++			Path:   "/ws",
++		},
++		Host:   "example.com",
++		Header: make(http.Header),
++	}
++	request.Header.Set("Connection", "Upgrade")
++	request.Header.Set("Upgrade", "websocket")
++	request.Header.Set("Sec-WebSocket-Version", "13")
++	request.Header.Set("Sec-WebSocket-Key", "test-key")
++	request.Header.Set("User-Agent", "configured-agent")
++	request.Header.Set("X-Test", "configured-value")
++
++	conn := &captureConn{}
++	if err := writeWebsocketClientRequest(conn, request); err != nil {
++		t.Fatal(err)
++	}
++
++	actual := conn.written.String()
++	if !strings.Contains(actual, "\r\nUser-Agent: configured-agent\r\n") {
++		t.Fatalf("missing configured User-Agent:\n%s", actual)
++	}
++	if !strings.Contains(actual, "\r\nX-Test: configured-value\r\n") {
++		t.Fatalf("missing configured header:\n%s", actual)
++	}
+ }
+-- 
+2.54.0.windows.1
+

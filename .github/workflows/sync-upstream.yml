@@ -51,7 +51,7 @@ jobs:
           patch_dir="$(mktemp -d)"
           cp patches/*.patch "$patch_dir"/
 
-          latest="$(curl -fsSL https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r '.tag_name')"
+          latest="$(gh api repos/MetaCubeX/mihomo/releases/latest --jq '.tag_name')"
           if [[ -z "$latest" || "$latest" == "null" ]]; then
             echo "No upstream latest release found" >&2
             exit 1
@@ -131,10 +131,12 @@ jobs:
 
       - name: Sync Alpha
         id: sync
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           patch_dir="$(mktemp -d)"
-          cp patches/*.patch "$patch_dir"/
+          cp patches-alpha/*.patch "$patch_dir"/
 
           upstream_alpha="$(git rev-parse upstream/Alpha)"
           current_alpha="$(git ls-remote origin refs/heads/Alpha | awk '{print $1}')"
@@ -151,6 +153,11 @@ jobs:
           git switch -C Alpha upstream/Alpha
           git am --empty=drop "$patch_dir"/*.patch || {
             echo "Compatibility patch replay failed on Alpha" >&2
+            if [[ "$EVENT_NAME" == "schedule" ]]; then
+              echo "::warning::Alpha compatibility patch replay failed; leaving the current fork Alpha release unchanged."
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             exit 1
           }
 
